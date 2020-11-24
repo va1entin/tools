@@ -13,7 +13,7 @@ def setup_parser():
 
     parser.add_argument('-ar', '--artist', help='Artist name')
     parser.add_argument('-al', '--album', help='Album name')
-    parser.add_argument('-p', '--path', help="Path to get files from")
+    parser.add_argument('-p', '--path', help="Path to get files from", default=".")
     parser.add_argument('-f', '--file', help="File to edit")
     parser.add_argument('-dr', '--dry-run', action='store_true', help="Don't save changes to file(s), activates verbose logging", default=False)
     parser.add_argument('-de', '--debug', action='store_true', help="Debug output", default=False)
@@ -30,7 +30,7 @@ def set_tags(args, file):
     if args.verbose:
         print(f'Reading file {file}')
 
-    title = re.sub('\..*', '', file)
+    title = re.sub('\..*$', '', file)
     m_file = mutagen.File(file)
 
     if args.debug:
