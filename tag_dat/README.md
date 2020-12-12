@@ -8,6 +8,13 @@ This is a simple Python script to manipulate metadata of audio files.
 It iterates over all files in a given path (default: current path), sets the filename (without file ending) as title and given arguments album and artist as audio tags.
 The script uses the amazing "mutagen" library under the hood and has a pretty limited scope, because more complex use cases can be implemented quickly using mutagen directly.
 
+tag_dat can handle the following file types:
+
+* FLAC
+* MP3
+* Ogg OPUS
+* Ogg Vorbis
+
 ```
 usage: tag_dat.py [-h] [-ar ARTIST] [-al ALBUM] [-p PATH] [-f FILE] [-dr] [-de] [-v]
 
