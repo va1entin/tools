@@ -30,7 +30,7 @@ def set_tags(args, file):
     if args.verbose:
         print(f'Reading file {file}')
 
-    title = re.sub('\..*$', '', file)
+    title = re.sub('\.[a-zA-Z0-9]*$', '', file)
     m_file = mutagen.File(file)
 
     if args.debug:
