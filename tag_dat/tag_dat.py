@@ -26,20 +26,40 @@ def setup_parser():
 
     return args
 
+
 def set_tags(args, file):
     if args.verbose:
         print(f'Reading file {file}')
 
-    title = re.sub('\.[a-zA-Z0-9]*$', '', file)
-    m_file = mutagen.File(file)
+    title = re.sub(r'\.[a-zA-Z0-9]*$', '', file)
+    try:
+        m_file = mutagen.File(file)
+    except mutagen.wave.error:
+        print('E: mutagen.wave.error - problematic wave file found.')
+        print('Ignoring...')
+        print('')
+        return
 
     if args.debug:
+        print(f'File object has type: {type(m_file)}')
         print('Read from file:')
         print(m_file)
 
-    m_file['artist'] = args.artist
-    m_file['album'] = args.album
-    m_file['title'] = title
+    if (isinstance(m_file, mutagen.flac.FLAC) or
+            isinstance(m_file, mutagen.oggopus.OggOpus) or
+            isinstance(m_file, mutagen.oggvorbis.OggVorbis)):
+        m_file['artist'] = args.artist
+        m_file['album'] = args.album
+        m_file['title'] = title
+    elif isinstance(m_file, mutagen.mp3.MP3):
+        m_file.tags.add(mutagen.id3.TALB(text=[args.album]))
+        m_file.tags.add(mutagen.id3.TPE1(text=[args.artist]))
+        m_file.tags.add(mutagen.id3.TIT2(text=[title]))
+    else:
+        print(f'E: Unknown file type: {type(m_file)}')
+        print('Ignoring...')
+        print('')
+        return
 
     if args.verbose:
         print('Modified file object:')
@@ -51,6 +71,7 @@ def set_tags(args, file):
         print(f'Dry run. Not writing changes to {file}')
     print('')
 
+
 def main(args):
     if args.file:
         set_tags(args, args.file)
@@ -58,6 +79,7 @@ def main(args):
         files = [f for f in os.listdir(args.path)]
         for file in files:
             set_tags(args, file)
+
 
 if __name__ == "__main__":
     args = setup_parser()
