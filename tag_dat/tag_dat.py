@@ -13,6 +13,7 @@ def setup_parser():
 
     parser.add_argument('-ar', '--artist', help='Artist name')
     parser.add_argument('-al', '--album', help='Album name')
+    parser.add_argument('-nt', '--no-title', action='store_true', help="Don't set title from file name", default=False)
     parser.add_argument('-p', '--path', help="Path to get files from", default=".")
     parser.add_argument('-f', '--file', help="File to edit")
     parser.add_argument('-dr', '--dry-run', action='store_true', help="Don't save changes to file(s), activates verbose logging", default=False)
@@ -50,11 +51,13 @@ def set_tags(args, file):
             isinstance(m_file, mutagen.oggvorbis.OggVorbis)):
         m_file['artist'] = args.artist
         m_file['album'] = args.album
-        m_file['title'] = title
+        if not args.no_title:
+            m_file['title'] = title
     elif isinstance(m_file, mutagen.mp3.MP3):
         m_file.tags.add(mutagen.id3.TALB(text=[args.album]))
         m_file.tags.add(mutagen.id3.TPE1(text=[args.artist]))
-        m_file.tags.add(mutagen.id3.TIT2(text=[title]))
+        if not args.no_title:
+            m_file.tags.add(mutagen.id3.TIT2(text=[title]))
     else:
         print(f'E: Unknown file type: {type(m_file)}')
         print('Ignoring...')
@@ -62,6 +65,8 @@ def set_tags(args, file):
         return
 
     if args.verbose:
+        if args.no_title:
+            print('Not setting title because flag -nt, --no-title is set...')
         print('Modified file object:')
         print(m_file)
     if not args.dry_run:
@@ -76,7 +81,8 @@ def main(args):
     if args.file:
         set_tags(args, args.file)
     if args.path:
-        files = [f for f in os.listdir(args.path)]
+        os.chdir(args.path)
+        files = [f for f in os.listdir('.')]
         for file in files:
             set_tags(args, file)
 
