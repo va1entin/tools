@@ -14,13 +14,16 @@ def setup_parser():
     parser.add_argument('-ar', '--artist', help='Artist name')
     parser.add_argument('-al', '--album', help='Album name')
     parser.add_argument('-nt', '--no-title', action='store_true', help="Don't set title from file name", default=False)
-    parser.add_argument('-p', '--path', help="Path to get files from", default=".")
+    parser.add_argument('-p', '--path', help="Path to get files from")
     parser.add_argument('-f', '--file', help="File to edit")
     parser.add_argument('-dr', '--dry-run', action='store_true', help="Don't save changes to file(s), activates verbose logging", default=False)
     parser.add_argument('-de', '--debug', action='store_true', help="Debug output", default=False)
     parser.add_argument('-v', '--verbose', action='store_true', help="Verbose logging, defaults to True if debug is True", default=False)
 
     args = parser.parse_args()
+
+    if not args.file and not args.path:
+        args.path = '.'
 
     if args.debug or args.dry_run:
         args.verbose = True
@@ -49,13 +52,17 @@ def set_tags(args, file):
     if (isinstance(m_file, mutagen.flac.FLAC) or
             isinstance(m_file, mutagen.oggopus.OggOpus) or
             isinstance(m_file, mutagen.oggvorbis.OggVorbis)):
-        m_file['artist'] = args.artist
-        m_file['album'] = args.album
+        if args.artist:
+            m_file['artist'] = args.artist
+        if args.album:
+            m_file['album'] = args.album
         if not args.no_title:
             m_file['title'] = title
     elif isinstance(m_file, mutagen.mp3.MP3):
-        m_file.tags.add(mutagen.id3.TALB(text=[args.album]))
-        m_file.tags.add(mutagen.id3.TPE1(text=[args.artist]))
+        if args.artist:
+            m_file.tags.add(mutagen.id3.TPE1(text=[args.artist]))
+        if args.album:
+            m_file.tags.add(mutagen.id3.TALB(text=[args.album]))
         if not args.no_title:
             m_file.tags.add(mutagen.id3.TIT2(text=[title]))
     else:
