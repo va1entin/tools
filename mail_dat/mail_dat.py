@@ -32,7 +32,7 @@ def setup_logging(args):
 
 
 def get_gpg_cipher_text(string_to_encrypt, args):
-    logging.info(f'Encrypting message using key {args.to_address} from gpghome {args.gpg_home}...')
+    logging.info(f'Encrypting message using key "{args.to_address}" from gpghome "{args.gpg_home}"...')
     gpg = gnupg.GPG(gnupghome=args.gpg_home)
     encrypted = gpg.encrypt(string_to_encrypt, args.to_address)
     if encrypted.status != "encryption ok":
@@ -86,15 +86,15 @@ def send_mail(args):
     logging.info('Generating email...')
     enc_msg = get_email_string(args)
 
-    logging.info(f'Opening SMTP connection to {args.url}')
+    logging.info(f'Opening SMTP connection to "{args.url}"')
     conn = SMTP(args.url)
-    logging.info(f'SMTP debugging set to {args.smtp_debug}')
+    logging.info(f'SMTP debugging set to "{args.smtp_debug}"')
     conn.set_debuglevel(args.smtp_debug)
 
-    logging.info(f'SMTP login with {args.from_address}')
+    logging.info(f'SMTP login with "{args.from_address}"')
     conn.login(args.from_address, args.password)
 
-    logging.info(f'Sending email from {args.from_address} to {args.to_address}')
+    logging.info(f'Sending email from "{args.from_address}" to "{args.to_address}"')
     conn.sendmail(args.from_address, args.to_address, enc_msg)
     logging.info('Closing SMTP connection...')
     conn.quit()
