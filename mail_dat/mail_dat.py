@@ -9,7 +9,7 @@ from email.message import Message
 from smtplib import SMTP_SSL as SMTP
 
 
-# mkdir ~/gpghome ; gpg --homedir ~/gpghome --import ~/my_pub_key.asc ; gpg --homedir ~/gpghome --edit-key to_address@example.com -> trust -> 5 -> y -> save
+# mkdir ~/gpghome ; chmod 700 ~/gpghome ; gpg --homedir ~/gpghome --import ~/my_pub_key.asc ; gpg --homedir ~/gpghome --edit-key to_address@example.com -> trust -> 5 -> y -> save
 # For Gmail: allow "less secure apps" in google account: https://myaccount.google.com/u/1/lesssecureapps
 
 def setup_parser():
