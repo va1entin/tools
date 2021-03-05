@@ -100,7 +100,11 @@ def send_mail(args):
     conn.quit()
 
 
-if __name__ == '__main__':
+def main():
     args = setup_parser()
     setup_logging(args)
     send_mail(args)
+
+
+if __name__ == '__main__':
+    main()
