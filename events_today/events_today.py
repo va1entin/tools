@@ -50,7 +50,10 @@ def get_vcal_events(calendars, timezone, calendars_to_be_checked):
         for calendar in calendars:
             if calendar.name in calendars_to_be_checked:
                 logging.info(f'Configured calendar "{calendar.name}" was found, getting events...')
-                all_vcal_events[calendar.name] = calendar.date_search(today + datetime.timedelta(days=1), end=today + datetime.timedelta(days=2))
+                vcal_events = calendar.date_search(today, end=today + datetime.timedelta(days=1))
+                if vcal_events:
+                    all_vcal_events[calendar.name] = vcal_events
+                #all_vcal_events[calendar.name] = calendar.date_search(today + datetime.timedelta(days=1), end=today + datetime.timedelta(days=2))
     else:
         logging.critical("No calendars found. Exiting...")
         exit(1)
