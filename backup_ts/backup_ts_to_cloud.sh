@@ -22,3 +22,5 @@ rsync -a "${TS_DATA_FOLDER}" "${BACKUP_FOLDER}"
 python3 -c 'from plasm import encrypt; encrypt.encrypt_file("'"${BACKUP_ARCHIVE}"'", "'"${BACKUP_PUBLIC_KEY}"'", remove_input_file=True)'
 
 rclone copy "${BACKUP_ARCHIVE}.crypt" "${RCLONE_REMOTE}:${RCLONE_REMOTE_FOLDER}/"
+
+rm -rf "${BACKUP_FOLDER}"
