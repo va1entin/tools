@@ -10,6 +10,7 @@ MARIADB_CONTAINER_NAME="${2}"
 TS_DATA_FOLDER="${3}"
 RCLONE_REMOTE="${4}"
 RCLONE_REMOTE_FOLDER="ts_backups"
+ENCRYPTED_BACKUP_ARCHIVE="${BACKUP_ARCHIVE}.crypt"
 
 echo "Creating backup folder..."
 mkdir -p "${BACKUP_FOLDER}"
@@ -32,9 +33,13 @@ python3 -c 'from plasm import encrypt; encrypt.encrypt_file("'"${BACKUP_ARCHIVE}
 echo ""
 
 echo "Copying encrypted backup archive to cloud..."
-rclone copy "${BACKUP_ARCHIVE}.crypt" "${RCLONE_REMOTE}:${RCLONE_REMOTE_FOLDER}/"
+rclone copy "${ENCRYPTED_BACKUP_ARCHIVE}" "${RCLONE_REMOTE}:${RCLONE_REMOTE_FOLDER}/"
 echo ""
 
 echo "Removing backup folder..."
 rm -rf "${BACKUP_FOLDER}"
+echo ""
+
+echo "Removing encrypted backup archive..."
+rm "${ENCRYPTED_BACKUP_ARCHIVE}"
 echo ""
