@@ -10,7 +10,7 @@ while [ $online -ne 1 ]
   do
   answer=$(nmap "$address" -p "$port" | grep open)
 
-  if [[ $answer = "*open*" ]]
+  if [[ $answer = *"open"* ]]
   then echo "$(date +"%Y-%m-%d %H:%M:%S") Port $port on $address is reachable now."
   online=1
   fi
