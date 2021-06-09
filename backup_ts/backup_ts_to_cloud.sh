@@ -11,6 +11,7 @@ TS_DATA_FOLDER="${3}"
 RCLONE_REMOTE="${4}"
 RCLONE_REMOTE_FOLDER="ts_backups"
 ENCRYPTED_BACKUP_ARCHIVE="${BACKUP_ARCHIVE}.crypt"
+REMOTE_RETENTION="5d"
 
 echo "Creating backup folder..."
 mkdir -p "${BACKUP_FOLDER}"
@@ -34,6 +35,10 @@ echo ""
 
 echo "Copying encrypted backup archive to cloud..."
 rclone copy "${ENCRYPTED_BACKUP_ARCHIVE}" "${RCLONE_REMOTE}:${RCLONE_REMOTE_FOLDER}/"
+echo ""
+
+echo "Removing old backup archives in cloud..."
+rclone delete --min-age "${REMOTE_RETENTION}" "${RCLONE_REMOTE}:${RCLONE_REMOTE_FOLDER}/"
 echo ""
 
 echo "Removing backup folder..."
