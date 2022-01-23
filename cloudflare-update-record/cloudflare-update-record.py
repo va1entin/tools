@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Based on https://gist.github.com/benkulbertis/fff10759c2391b6618dd
 
-# See for configuration: https://valh.io/blog/Cloudflare-DynDNS.html
+# See for configuration: https://valh.io/p/python-script-for-cloudflare-dns-record-updates-dyndns/
 
 import argparse
 import logging

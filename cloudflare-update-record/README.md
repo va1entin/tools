@@ -4,7 +4,7 @@ Updates a DNS A or AAAA record on Cloudflare with the system's current external 
 
 It obtains the external IPv4/v6 address from a *provider* (default: https://icanhazip.com), sets it for a specified record and finally writes it to a file to check with next time.
 
-See my [blog post](https://valh.io/blog/Cloudflare-DynDNS.html) for more information and config instructions.
+See my [blog post](https://valh.io/p/python-script-for-cloudflare-dns-record-updates-dyndns/) for more information and config instructions.
 
 ## Get usage
 
