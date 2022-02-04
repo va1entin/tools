@@ -89,7 +89,7 @@ def check_ip(current_ip_address, version):
         return True
 
 
-def get_config(args):
+def get_config(args, record_type):
     try:
         with open(args.config, 'r') as stream:
             config = yaml.safe_load(stream)
@@ -102,11 +102,12 @@ def get_config(args):
     request_successful, zone_id_response = make_request('get', f'https://api.cloudflare.com/client/v4/zones?name={config["zone_name"]}', headers={"Authorization": f"Bearer {config['read_token']}", "Content-Type": "application/json"}, exit_on_fail=True)
     config['zone_identifier'] = zone_id_response.json()['result'][0]['id']
 
-    request_successful, record_id_response = make_request('get', f'https://api.cloudflare.com/client/v4/zones/{config["zone_identifier"]}/dns_records?name={config["record_name"]}', headers={"Authorization": f"Bearer {config['read_token']}", "Content-Type": "application/json"}, exit_on_fail=True)
+    request_successful, record_id_response = make_request('get', f'https://api.cloudflare.com/client/v4/zones/{config["zone_identifier"]}/dns_records?name={config["record_name"]}.{config["zone_name"]}&type={record_type}', headers={"Authorization": f"Bearer {config['read_token']}", "Content-Type": "application/json"}, exit_on_fail=True)
+
     try:
         config['record_identifier'] = record_id_response.json()['result'][0]['id']
     except IndexError:
-        logging.critical(f'Could not find id of DNS record. "Results" in API response were empty. Please make sure that the specified DNS record already exists and config {args.config} is correct. Try again after.')
+        logging.exception(f'Could not find id of DNS record. "Results" in API response were empty. Please make sure that the specified DNS record already exists and config {args.config} is correct. Try again after. Dumping exception...')
         sys.exit(1)
 
     return config
@@ -133,7 +134,7 @@ def main(ip_version, record_type, args):
     if current_ip_address:
         ip_different = check_ip(current_ip_address, ip_version)
         if ip_different:
-            config = get_config(args)
+            config = get_config(args, record_type)
             update_record(config, current_ip_address, record_type)
             write_ip(current_ip_address, ip_version)
         else:
