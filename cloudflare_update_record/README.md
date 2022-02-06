@@ -1,4 +1,4 @@
-# cloudflare-update-record.py
+# cloudflare_update_record.py
 
 Updates a DNS A or AAAA record on Cloudflare with the system's current external IPv4/v6 address.
 
@@ -9,19 +9,19 @@ See my [blog post](https://valh.io/p/python-script-for-cloudflare-dns-record-upd
 ## Get usage
 
 ```bash
-cloudflare-update-record.py -h
+cloudflare_update_record.py -h
 ```
 
 ## Update a DNS A record
 
 ```bash
-cloudflare-update-record.py -4
+cloudflare_update_record.py -4
 ```
 
 ## Update a DNS AAAA record
 
 ```bash
-cloudflare-update-record.py -6
+cloudflare_update_record.py -6
 ```
 
 ## Config format
