@@ -16,11 +16,9 @@ def setup_parser():
     args = parser.parse_args()
     return args
 
-
 def run_ydl(ydl_opts, url):
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
-
 
 def main():
     args = setup_parser()
@@ -35,6 +33,7 @@ def main():
         }
         if args.verbose:
             ydl_opts.update({'verbose': 'true'})
+        output_template = ""
         if args.output_dir:
             output_template = f'{args.output_dir}'
             if not output_template.endswith('/'):
