@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
+import os
 import re
 import youtube_dl
 
 
 BASE_OUTPUT_TEMPLATE = '%(title)s.%(ext)s'
-
 
 def setup_parser():
     parser = argparse.ArgumentParser()
@@ -32,7 +32,7 @@ def main():
             }]
         }
         if args.verbose:
-            ydl_opts.update({'verbose': 'true'})
+            ydl_opts['verbose'] = 'true'
         output_template = ""
         if args.output_dir:
             output_template = f'{args.output_dir}'
@@ -41,11 +41,17 @@ def main():
         if re.match(r'.*(\?|&)list=.*', args.url):
             print("Is a YouTube playlist url...")
             output_template += '%(playlist_index)s_'
+            playlist_id = re.sub(r'.*list=', '', args.url)
+            DOWNLOAD_ARCHIVE_FILE = f'/tmp/ydl_archive_{playlist_id}.txt'
+            ydl_opts['download_archive'] = DOWNLOAD_ARCHIVE_FILE
         else:
             print("Is an individual YouTube video...")
         output_template += BASE_OUTPUT_TEMPLATE
         ydl_opts.update({'outtmpl': output_template})
         run_ydl(ydl_opts, args.url)
+        if os.path.exists(DOWNLOAD_ARCHIVE_FILE):
+            print(f"Removing download archive at '{DOWNLOAD_ARCHIVE_FILE}'...")
+            os.remove(DOWNLOAD_ARCHIVE_FILE)
     else:
         print("No URL provided!")
 
