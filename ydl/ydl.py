@@ -13,6 +13,7 @@ def setup_parser():
     parser.add_argument('url', nargs='?', help='YouTube URL')
     parser.add_argument('-d', '--output-dir', help='Directory to put downloaded files into')
     parser.add_argument('-v', '--verbose', help='Get verbose output', action='store_true')
+    parser.add_argument('-c', '--cleanup-download-archives', help='Cleanup download archive files after complete playlist download', action='store_true')
     args = parser.parse_args()
     return args
 
@@ -49,7 +50,7 @@ def main():
         output_template += BASE_OUTPUT_TEMPLATE
         ydl_opts.update({'outtmpl': output_template})
         run_ydl(ydl_opts, args.url)
-        if os.path.exists(DOWNLOAD_ARCHIVE_FILE):
+        if args.cleanup_download_archives and os.path.exists(DOWNLOAD_ARCHIVE_FILE):
             print(f"Removing download archive at '{DOWNLOAD_ARCHIVE_FILE}'...")
             os.remove(DOWNLOAD_ARCHIVE_FILE)
     else:
