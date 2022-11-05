@@ -113,7 +113,10 @@ def get_identifiers(config, record_type):
     request_successful, zone_id_response = make_request('get', f'https://api.cloudflare.com/client/v4/zones?name={config["zone_name"]}', headers={"Authorization": f"Bearer {config['read_token']}", "Content-Type": "application/json"}, exit_on_fail=True)
     zone_identifier = zone_id_response.json()['result'][0]['id']
 
-    request_successful, record_id_response = make_request('get', f'https://api.cloudflare.com/client/v4/zones/{zone_identifier}/dns_records?name={config["record_name"]}.{config["zone_name"]}&type={record_type}', headers={"Authorization": f"Bearer {config['read_token']}", "Content-Type": "application/json"}, exit_on_fail=True)
+    if config["record_name"] == "@":
+        request_successful, record_id_response = make_request('get', f'https://api.cloudflare.com/client/v4/zones/{zone_identifier}/dns_records?name={config["zone_name"]}&type={record_type}', headers={"Authorization": f"Bearer {config['read_token']}", "Content-Type": "application/json"}, exit_on_fail=True)
+    else:
+        request_successful, record_id_response = make_request('get', f'https://api.cloudflare.com/client/v4/zones/{zone_identifier}/dns_records?name={config["record_name"]}.{config["zone_name"]}&type={record_type}', headers={"Authorization": f"Bearer {config['read_token']}", "Content-Type": "application/json"}, exit_on_fail=True)
 
     try:
         record_identifier = record_id_response.json()['result'][0]['id']

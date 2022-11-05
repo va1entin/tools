@@ -30,5 +30,5 @@ cloudflare_update_record.py -6
 read_token: "<YOUR READ TOKEN>"
 edit_token: "<YOUR EDIT TOKEN>"
 zone_name: "<YOUR ZONE NAME>"
-record_name: "<YOUR RECORD NAME>"
+record_name: "<YOUR RECORD NAME>" # use "@" for root record
 ```
