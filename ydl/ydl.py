@@ -3,7 +3,11 @@
 import argparse
 import os
 import re
-import youtube_dl
+# import youtube_dl
+# using yt_dlp instead of youtube_dl because they
+# refuse to make new releases despite active development
+# see https://github.com/ytdl-org/youtube-dl/issues/31585
+import yt_dlp as youtube_dl
 
 
 BASE_OUTPUT_TEMPLATE = '%(title)s.%(ext)s'
