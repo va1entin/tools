@@ -3,8 +3,8 @@
 # Simple tool to modify audio file tags using mutagen -> https://github.com/quodlibet/mutagen
 
 import argparse
-import re
 import os
+import re
 
 import mutagen
 from openai import OpenAI
