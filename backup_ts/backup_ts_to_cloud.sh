@@ -9,20 +9,30 @@ BACKUP_PUBLIC_KEY="${1}"
 MARIADB_CONTAINER_NAME="${2}"
 TS_DATA_FOLDER="${3}"
 RCLONE_REMOTE="${4}"
+PODMAN_USER="${5}"
 RCLONE_REMOTE_FOLDER="ts_backups"
 ENCRYPTED_BACKUP_ARCHIVE="${BACKUP_ARCHIVE}.crypt"
 REMOTE_RETENTION="5d"
 
 echo "Creating backup folder..."
-mkdir -p "${BACKUP_FOLDER}"
+cd /tmp
+mkdir "${BACKUP_FOLDER}"
 echo ""
 
 echo "Dumping TS database..."
-docker exec "${MARIADB_CONTAINER_NAME}" sh -c 'exec mysqldump --all-databases -uroot -p"$MYSQL_ROOT_PASSWORD"' > "${BACKUP_FOLDER}/ts_db_backup_${TODAY}.sql"
+sudo -u "${PODMAN_USER}" podman exec "${MARIADB_CONTAINER_NAME}" sh -c 'exec mysqldump teamspeak -uroot -p"$MYSQL_ROOT_PASSWORD"' > "${BACKUP_FOLDER}/ts_db_backup_${TODAY}.sql"
 echo ""
 
-echo "Copying TS data folder to backup folder..."
-rsync -a "${TS_DATA_FOLDER}" "${BACKUP_FOLDER}"
+echo "Getting TS podman volume ID..."
+TS_PODMAN_VOLUME_ID=$(sudo -u "${PODMAN_USER}" podman inspect --format '{{json .HostConfig.Binds }}' teamspeak | grep -oP '[a-f0-9]+(?=:/var/ts3server)')
+echo "Found TS volume ID: ${TS_VOLUME_ID}"
+echo "Getting host mountpoint for TS podman volume..."
+TS_PODMAN_VOLUME_HOST_MOUNTPOINT=$(sudo -u "${PODMAN_USER}" podman volume inspect --format '{{json .Mountpoint }}' "${TS_PODMAN_VOLUME_ID}" | sed 's/"//g')
+echo "Found TS volume host mountpoint: ${TS_VOLUME_MOUNTPOINT}"
+echo ""
+
+echo "Copying data from TS podman volume to backup folder..."
+rsync -a "${TS_PODMAN_VOLUME_HOST_MOUNTPOINT}" "${BACKUP_FOLDER}"
 echo ""
 
 echo "Zipping backup folder..."
