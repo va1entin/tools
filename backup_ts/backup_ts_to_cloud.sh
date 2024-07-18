@@ -20,15 +20,15 @@ mkdir "${BACKUP_FOLDER}"
 echo ""
 
 echo "Dumping TS database..."
-sudo -u "${PODMAN_USER}" podman exec "${MARIADB_CONTAINER_NAME}" sh -c 'exec mysqldump teamspeak -uroot -p"$MYSQL_ROOT_PASSWORD"' > "${BACKUP_FOLDER}/ts_db_backup_${TODAY}.sql"
+sudo -u "${PODMAN_USER}" podman exec "${MARIADB_CONTAINER_NAME}" sh -c 'exec mariadb-dump teamspeak -uroot -p"$MARIADB_ROOT_PASSWORD"' > "${BACKUP_FOLDER}/ts_db_backup_${TODAY}.sql"
 echo ""
 
 echo "Getting TS podman volume ID..."
 TS_PODMAN_VOLUME_ID=$(sudo -u "${PODMAN_USER}" podman inspect --format '{{json .HostConfig.Binds }}' teamspeak | grep -oP '[a-f0-9]+(?=:/var/ts3server)')
-echo "Found TS volume ID: ${TS_VOLUME_ID}"
+echo "Found TS volume ID: ${TS_PODMAN_VOLUME_ID}"
 echo "Getting host mountpoint for TS podman volume..."
 TS_PODMAN_VOLUME_HOST_MOUNTPOINT=$(sudo -u "${PODMAN_USER}" podman volume inspect --format '{{json .Mountpoint }}' "${TS_PODMAN_VOLUME_ID}" | sed 's/"//g')
-echo "Found TS volume host mountpoint: ${TS_VOLUME_MOUNTPOINT}"
+echo "Found TS volume host mountpoint: ${TS_PODMAN_VOLUME_HOST_MOUNTPOINT}"
 echo ""
 
 echo "Copying data from TS podman volume to backup folder..."
