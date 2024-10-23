@@ -4,29 +4,29 @@ TODAY="$(date +'%Y_%m_%d')"
 
 BACKUP_NAME="ts_backup_${TODAY}"
 BACKUP_FOLDER="/tmp/${BACKUP_NAME}"
-BACKUP_ARCHIVE="${BACKUP_FOLDER}.zip"
+BACKUP_ARCHIVE="${BACKUP_FOLDER}.tar.xz"
 BACKUP_PUBLIC_KEY="${1}"
 MARIADB_CONTAINER_NAME="${2}"
-TS_DATA_FOLDER="${3}"
-RCLONE_REMOTE="${4}"
+RCLONE_REMOTE="${3}"
 RCLONE_REMOTE_FOLDER="ts_backups"
 ENCRYPTED_BACKUP_ARCHIVE="${BACKUP_ARCHIVE}.crypt"
 REMOTE_RETENTION="5d"
 
 echo "Creating backup folder..."
-mkdir -p "${BACKUP_FOLDER}"
+cd /tmp
+mkdir "${BACKUP_FOLDER}"
 echo ""
 
 echo "Dumping TS database..."
-docker exec "${MARIADB_CONTAINER_NAME}" sh -c 'exec mysqldump --all-databases -uroot -p"$MYSQL_ROOT_PASSWORD"' > "${BACKUP_FOLDER}/ts_db_backup_${TODAY}.sql"
+podman exec "${MARIADB_CONTAINER_NAME}" sh -c 'exec mariadb-dump teamspeak -uroot -p"$MARIADB_ROOT_PASSWORD"' > "${BACKUP_FOLDER}/ts_db_backup_${TODAY}.sql"
 echo ""
 
-echo "Copying TS data folder to backup folder..."
-rsync -a "${TS_DATA_FOLDER}" "${BACKUP_FOLDER}"
+echo "Exporting TS podman volume..."
+podman volume export -o "${BACKUP_FOLDER}/ts_volume_export_${TODAY}.tar" teamspeak
 echo ""
 
 echo "Zipping backup folder..."
-7z a "${BACKUP_ARCHIVE}" "${BACKUP_FOLDER}"
+tar -cJf "${BACKUP_ARCHIVE}" -C "${BACKUP_FOLDER}" .
 echo ""
 
 echo "Encrypting backup archive..."

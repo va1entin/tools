@@ -80,7 +80,7 @@ def get_tag_from_ai(openai, filename, tag_type, model=OPENAI_MODEL):
         response = openai.chat.completions.create(
             model=model,
             messages=[
-                {"role": "system", "content": f"You are part of a music file tagging script. I'm sending you a file name and you should respond with what you think is the {tag_type} based on this file name. Give me only the {tag_type} to put into the file tags and nothing else. If you think there is no {tag_type} in the file name, just respond with 'no {tag_type}'. If the user asks you about the track number, your response should not include leading zeros."},
+                {"role": "system", "content": f"You are part of a music file tagging script. I'm sending you a file name and you should respond with what you think is the {tag_type} based on this file name. Give me only the {tag_type} to put into the file tags and nothing else. Don't include quotation marks in the {tag_type}. If you think there is no {tag_type} in the file name, just respond with 'no {tag_type}'. If the user asks you about the track number, your response should not include leading zeros."},
                 {"role": "user", "content": f"Please get the {tag_type} for my file with name {filename}"},
             ],
         )
