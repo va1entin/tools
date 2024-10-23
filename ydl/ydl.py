@@ -3,6 +3,7 @@
 import argparse
 import os
 import re
+import sys
 # import youtube_dl
 # using yt_dlp instead of youtube_dl because they
 # refuse to make new releases despite active development
@@ -29,6 +30,11 @@ def main():
     args = setup_parser()
     if args.url:
         # print(args.url)
+        if not re.match(r'https?://(www\.)?youtube\.com/', args.url):
+            print("Error: Only YouTube URLs are supported.")
+            print("You might want to use yt-dlp directly for the given URL:")
+            print(f"  yt-dlp {args.url}")
+            sys.exit(1)
         ydl_opts = {
             'format': 'bestaudio/best',
             'postprocessors': [{
