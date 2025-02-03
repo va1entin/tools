@@ -133,8 +133,8 @@ def get_tag_from_ai(args, filename, tag_type, ai_client, user_modified_ai_respon
     try:
         sys_prompt = f"You are part of a music file tagging script. I'm sending you a file name and you should respond with what you think is the {tag_type} based on this file name. Give me only the {tag_type} to put into the file tags and nothing else. Don't include quotation marks in the {tag_type}. If you think there is no {tag_type} in the file name, just respond with 'no {tag_type}'. If the user asks you about the track number, your response should not include leading zeros."
         if user_modified_ai_responses:
-            print(f'  Previously modified AI responses: {user_modified_ai_responses}')
-            sys_prompt += f" Please consider that in previous runs the user has modified one or multiple responses of yours as specified in this JSON data: {user_modified_ai_responses}"
+            print(f'  DEBUG: Previously modified AI responses: {user_modified_ai_responses}')
+            sys_prompt += f" Please consider that in previous runs the user has modified one or multiple responses of yours as specified in the following JSON data and adapt your response accordingly: {user_modified_ai_responses}"
         user_prompt = f"Please get the {tag_type} for my file with name {filename}"
 
         if args.use_openai_api:
@@ -159,8 +159,8 @@ def get_tag_from_ai(args, filename, tag_type, ai_client, user_modified_ai_respon
             user_modified_ai_responses.append({
                 'filename': filename,
                 'tag_type': tag_type,
-                'original_prediction': tag_prediction,
-                'modified_prediction': user_response,
+                'your_prediction': tag_prediction,
+                'user_decision': user_response,
             })
             return user_response, user_modified_ai_responses
     else:
@@ -171,8 +171,8 @@ def get_tag_from_ai(args, filename, tag_type, ai_client, user_modified_ai_respon
             user_modified_ai_responses.append({
                 'filename': filename,
                 'tag_type': tag_type,
-                'original_prediction': tag_prediction,
-                'modified_prediction': user_response,
+                'your_prediction': tag_prediction,
+                'user_decision': user_response,
             })
             return user_response, user_modified_ai_responses
         else:
