@@ -1,0 +1,3 @@
+azure-ai-inference==1.0.0b7
+openai==1.60.2
+mutagen==1.47.0

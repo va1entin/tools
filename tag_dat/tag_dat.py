@@ -7,9 +7,11 @@ import os
 import re
 
 import mutagen
-from openai import OpenAI
 
-OPENAI_MODEL = "gpt-3.5-turbo"
+from openai import AzureOpenAI, OpenAI
+from azure.ai.inference import ChatCompletionsClient
+from azure.ai.inference.models import SystemMessage, UserMessage
+from azure.core.credentials import AzureKeyCredential
 
 def setup_parser():
     parser = argparse.ArgumentParser()
@@ -19,6 +21,13 @@ def setup_parser():
 
     parser.add_argument('-ar', '--artist', help='Artist name')
     parser.add_argument('-al', '--album', help='Album name')
+
+    ai_client_group = parser.add_mutually_exclusive_group()
+    ai_client_group.add_argument('-oai', '--use-openai-api', action='store_true', help='Use OpenAI API for AI-assisted operations', default=False)
+    ai_client_group.add_argument('-azoai', '--use-azure-openai-services', action='store_true', help='Use Azure OpenAI API for AI-assisted operations', default=False)
+    ai_client_group.add_argument('-azai', '--use-azure-ai-services', action='store_true', help='Use Azure AI Services API for AI-assisted operations', default=False)
+
+    parser.add_argument('-m', '--ai-model', help='AI model to use', default='gpt-4o-mini')
 
     title_group = parser.add_mutually_exclusive_group()
     title_group.add_argument('-ft', '--filename-title', action='store_true', help="Set title from file name (takes exact filename without file type ending: my_file.mp3 -> my_file)", default=False)
@@ -44,27 +53,48 @@ def setup_parser():
 
     return args
 
-
-def check_openai_api_key():
-    print('Checking OPENAI_API_KEY environment variable...')
-    if args.filename_title_with_ai:
-        print('  because --filename-title-with-ai is set.')
-    if args.tracknumber_with_ai:
-        print('  because --tracknumber-with-ai is set.')
-    if os.environ.get('OPENAI_API_KEY'):
-        try:
-            openai = OpenAI()
-            # add a test call to the OpenAI API here
-            #print('OpenAI API key is valid.')
-            return openai
-        except Exception as e:
-            print('E: Invalid OPENAI_API_KEY - here is the exception from OpenAI:')
-            print(e)
-            exit(1)
+def get_environment_variable(var_name, requiring_parameter):
+    env_var_value = os.environ.get(var_name)
+    if env_var_value:
+        return env_var_value
     else:
-        print('E: OPENAI_API_KEY environment variable not set.')
+        print(f'E: Environment variable {var_name} not set but {requiring_parameter} requires it.')
         exit(1)
 
+def get_openai_client(
+        model_name,
+        api_key=get_environment_variable('OPENAI_API_KEY', '--use-openai-api')
+    ):
+    print(f'Using OpenAI API with model "{model_name}"')
+    return OpenAI(
+        api_key = api_key,
+    )
+
+def get_azure_openai_client(
+        model_name,
+        api_key=get_environment_variable('AZURE_OPENAI_API_KEY', '--use-azure-openai-services'),
+        endpoint=get_environment_variable('AZURE_OPENAI_ENDPOINT', '--use-azure-openai-services')
+    ):
+    print(f'Using Azure OpenAI API with deployment "{model_name}"')
+    return AzureOpenAI(
+        api_key = api_key,
+        azure_endpoint = endpoint,
+        api_version = '2024-05-01-preview',
+    )
+
+def get_azure_ai_client(
+        model_name,
+        api_key=get_environment_variable('AZURE_AI_KEY', '--use-azure-ai-services'),
+        endpoint=get_environment_variable('AZURE_AI_ENDPOINT', '--use-azure-ai-services')
+    ):
+    if not model_name:
+        print('E: Azure AI Services model name not set but --use-azure-ai-services requires it.')
+    print(f'Using Azure AI Services with deployment "{model_name}"')
+    return ChatCompletionsClient(
+        credential = AzureKeyCredential(api_key),
+        endpoint = endpoint,
+        model = model_name
+    )
 
 def get_user_consent(prompt):
     user_consent = input(f'{prompt} [y/N] ')
@@ -73,48 +103,75 @@ def get_user_consent(prompt):
     else:
         return False
 
+def get_chat_completion_openai(openai, model_name, sys_prompt, user_prompt):
+    response = openai.chat.completions.create(
+        model=model_name,
+        messages=[
+            {
+                "role": "system",
+                "content": sys_prompt,
+            },
+            {
+                "role": "user",
+                "content": user_prompt,
+            },
+        ],
+    )
+    return response.choices[0].message.content
 
-def get_tag_from_ai(openai, filename, tag_type, model=OPENAI_MODEL):
+def get_chat_completion_azure_ai(azure_ai, sys_prompt, user_prompt):
+    response = azure_ai.complete(
+        messages=[
+            SystemMessage(content=sys_prompt),
+            UserMessage(content=user_prompt),
+        ]
+    )
+    return response.choices[0].message.content
+
+def get_tag_from_ai(args, filename, tag_type, ai_client):
     print(f'Trying to get {tag_type} for file "{filename}" using AI...')
     try:
-        response = openai.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": f"You are part of a music file tagging script. I'm sending you a file name and you should respond with what you think is the {tag_type} based on this file name. Give me only the {tag_type} to put into the file tags and nothing else. Don't include quotation marks in the {tag_type}. If you think there is no {tag_type} in the file name, just respond with 'no {tag_type}'. If the user asks you about the track number, your response should not include leading zeros."},
-                {"role": "user", "content": f"Please get the {tag_type} for my file with name {filename}"},
-            ],
-        )
-        tag_prediction = response.choices[0].message.content
+        sys_prompt = f"You are part of a music file tagging script. I'm sending you a file name and you should respond with what you think is the {tag_type} based on this file name. Give me only the {tag_type} to put into the file tags and nothing else. Don't include quotation marks in the {tag_type}. If you think there is no {tag_type} in the file name, just respond with 'no {tag_type}'. If the user asks you about the track number, your response should not include leading zeros."
+        user_prompt = f"Please get the {tag_type} for my file with name {filename}"
+        if args.use_openai_api:
+            used_service = 'OpenAI API'
+            tag_prediction = get_chat_completion_openai(ai_client, args.ai_model, sys_prompt, user_prompt)
+        elif args.use_azure_openai_services:
+            used_service = 'Azure OpenAI API'
+            tag_prediction = get_chat_completion_openai(ai_client, args.ai_model, sys_prompt, user_prompt)
+        elif args.use_azure_ai_services:
+            used_service = 'Azure AI Services'
+            tag_prediction = get_chat_completion_azure_ai(ai_client, sys_prompt, user_prompt)
     except Exception as e:
-        print(f'E: Exception from OpenAI while getting {tag_type} for file "{filename}":')
+        print(f'E: Exception from {used_service} while getting {tag_type} for file "{filename}":')
         print(e)
         exit(1)
 
     if tag_prediction == f'no {tag_type}':
-        print(f'  AI couldn\'t find a {tag_type} in the file name.')
+        print(f'  {args.ai_model} on {used_service} couldn\'t find a {tag_type} in the file name.')
         user_wants_to_add_tag = get_user_consent(f'  Do you want to add a {tag_type} yourself?')
         if user_wants_to_add_tag:
             return input(f'  Please enter the {tag_type}: ')
     else:
-        print(f'  AI predicted {tag_type} "{tag_prediction}" from file name "{filename}"')
+        print(f'  {args.ai_model} on {used_service} predicted {tag_type} "{tag_prediction}" from file name "{filename}"')
         user_wants_to_modify_tag = get_user_consent(f'  Do you want to modify this {tag_type}?')
         if user_wants_to_modify_tag:
             return input(f'  Please enter the modified {tag_type}: ')
         else:
-            print(f'  Using AI predicted {tag_type}.')
+            print(f'  Using {args.ai_model} on {used_service} predicted {tag_type}.')
             return tag_prediction
 
 
-def get_track_title_from_ai(openai, filename):
-    return get_tag_from_ai(openai, filename, 'track title')
+def get_track_title_from_ai(args, filename, ai_client):
+    return get_tag_from_ai(args, filename, 'track title', ai_client)
 
 
-def get_track_number_from_ai(openai, filename):
-    track_number = get_tag_from_ai(openai, filename, 'track number')
+def get_track_number_from_ai(args, filename, ai_client):
+    track_number = get_tag_from_ai(args, filename, 'track number', ai_client)
     return track_number.lstrip('0')
 
 
-def set_tags(args, file, openai):
+def set_tags(args, file, ai_client):
     if args.verbose:
         print(f'Reading file {file}')
 
@@ -145,12 +202,12 @@ def set_tags(args, file, openai):
         if args.tracknumber:
             m_file['tracknumber'] = args.tracknumber
         elif args.tracknumber_with_ai:
-            m_file['tracknumber'] = get_track_number_from_ai(openai, file)
+            m_file['tracknumber'] = get_track_number_from_ai(args, file, ai_client)
 
         if args.filename_title:
             m_file['title'] = filename_title
         elif args.filename_title_with_ai:
-            m_file['title'] = get_track_title_from_ai(openai, file)
+            m_file['title'] = get_track_title_from_ai(args, file, ai_client)
         elif args.title and args.file:
             m_file['title'] = args.title
     elif isinstance(m_file, mutagen.mp3.MP3):
@@ -164,12 +221,12 @@ def set_tags(args, file, openai):
         if args.tracknumber:
             m_file.tags.add(mutagen.id3.TRCK(text=[args.tracknumber]))
         elif args.tracknumber_with_ai:
-            m_file.tags.add(mutagen.id3.TRCK(text=[get_track_number_from_ai(openai, file)]))
+            m_file.tags.add(mutagen.id3.TRCK(text=[get_track_number_from_ai(args, file, ai_client)]))
 
         if args.filename_title:
             m_file.tags.add(mutagen.id3.TIT2(text=[filename_title]))
         elif args.filename_title_with_ai:
-            m_file.tags.add(mutagen.id3.TIT2(text=[get_track_title_from_ai(openai, file)]))
+            m_file.tags.add(mutagen.id3.TIT2(text=[get_track_title_from_ai(args, file, ai_client)]))
         elif args.title and args.file:
             m_file.tags.add(mutagen.id3.TIT2(text=[args.title]))
     else:
@@ -189,24 +246,27 @@ def set_tags(args, file, openai):
     print('')
 
 
-def main(args):
+def main():
+    args = setup_parser()
     try:
         if args.filename_title_with_ai or args.tracknumber_with_ai:
-            openai = check_openai_api_key()
-        else:
-            openai = None
+            if args.use_openai_api:
+                ai_client = get_openai_client(args.ai_model)
+            elif args.use_azure_openai_services:
+                ai_client = get_azure_openai_client(args.ai_model)
+            elif args.use_azure_ai_services:
+                ai_client = get_azure_ai_client(args.ai_model)
         if args.file:
-            set_tags(args, args.file, openai)
+            set_tags(args, args.file, ai_client)
         if args.path:
             os.chdir(args.path)
             files = [f for f in os.listdir('.')]
             for file in files:
-                set_tags(args, file, openai)
+                set_tags(args, file, ai_client)
     except KeyboardInterrupt:
         print("\nInterrupted by user. Exiting...")
         exit(1)
 
 
 if __name__ == "__main__":
-    args = setup_parser()
-    main(args)
+    main()
