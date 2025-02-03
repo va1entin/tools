@@ -128,11 +128,15 @@ def get_chat_completion_azure_ai(azure_ai, sys_prompt, user_prompt):
     )
     return response.choices[0].message.content
 
-def get_tag_from_ai(args, filename, tag_type, ai_client):
+def get_tag_from_ai(args, filename, tag_type, ai_client, user_modified_ai_responses):
     print(f'Trying to get {tag_type} for file "{filename}" using AI...')
     try:
         sys_prompt = f"You are part of a music file tagging script. I'm sending you a file name and you should respond with what you think is the {tag_type} based on this file name. Give me only the {tag_type} to put into the file tags and nothing else. Don't include quotation marks in the {tag_type}. If you think there is no {tag_type} in the file name, just respond with 'no {tag_type}'. If the user asks you about the track number, your response should not include leading zeros."
+        if user_modified_ai_responses:
+            print(f'  Previously modified AI responses: {user_modified_ai_responses}')
+            sys_prompt += f" Please consider that in previous runs the user has modified one or multiple responses of yours as specified in this JSON data: {user_modified_ai_responses}"
         user_prompt = f"Please get the {tag_type} for my file with name {filename}"
+
         if args.use_openai_api:
             used_service = 'OpenAI API'
             tag_prediction = get_chat_completion_openai(ai_client, args.ai_model, sys_prompt, user_prompt)
@@ -151,27 +155,41 @@ def get_tag_from_ai(args, filename, tag_type, ai_client):
         print(f'  {args.ai_model} on {used_service} couldn\'t find a {tag_type} in the file name.')
         user_wants_to_add_tag = get_user_consent(f'  Do you want to add a {tag_type} yourself?')
         if user_wants_to_add_tag:
-            return input(f'  Please enter the {tag_type}: ')
+            user_response = input(f'  Please enter the {tag_type}: ')
+            user_modified_ai_responses.append({
+                'filename': filename,
+                'tag_type': tag_type,
+                'original_prediction': tag_prediction,
+                'modified_prediction': user_response,
+            })
+            return user_response, user_modified_ai_responses
     else:
         print(f'  {args.ai_model} on {used_service} predicted {tag_type} "{tag_prediction}" from file name "{filename}"')
         user_wants_to_modify_tag = get_user_consent(f'  Do you want to modify this {tag_type}?')
         if user_wants_to_modify_tag:
-            return input(f'  Please enter the modified {tag_type}: ')
+            user_response = input(f'  Please enter the modified {tag_type}: ')
+            user_modified_ai_responses.append({
+                'filename': filename,
+                'tag_type': tag_type,
+                'original_prediction': tag_prediction,
+                'modified_prediction': user_response,
+            })
+            return user_response, user_modified_ai_responses
         else:
             print(f'  Using {args.ai_model} on {used_service} predicted {tag_type}.')
-            return tag_prediction
+            return tag_prediction, user_modified_ai_responses
 
 
-def get_track_title_from_ai(args, filename, ai_client):
-    return get_tag_from_ai(args, filename, 'track title', ai_client)
+def get_track_title_from_ai(args, filename, ai_client, user_modified_ai_responses):
+    return get_tag_from_ai(args, filename, 'track title', ai_client, user_modified_ai_responses)
 
 
-def get_track_number_from_ai(args, filename, ai_client):
-    track_number = get_tag_from_ai(args, filename, 'track number', ai_client)
-    return track_number.lstrip('0')
+def get_track_number_from_ai(args, filename, ai_client, user_modified_ai_responses):
+    track_number, user_modified_ai_responses = get_tag_from_ai(args, filename, 'track number', ai_client, user_modified_ai_responses)
+    return track_number.lstrip('0'), user_modified_ai_responses
 
 
-def set_tags(args, file, ai_client):
+def set_tags(args, file, ai_client, user_modified_ai_responses=[]):
     if args.verbose:
         print(f'Reading file {file}')
 
@@ -202,12 +220,12 @@ def set_tags(args, file, ai_client):
         if args.tracknumber:
             m_file['tracknumber'] = args.tracknumber
         elif args.tracknumber_with_ai:
-            m_file['tracknumber'] = get_track_number_from_ai(args, file, ai_client)
+            m_file['tracknumber'], user_modified_ai_responses = get_track_number_from_ai(args, file, ai_client, user_modified_ai_responses)
 
         if args.filename_title:
             m_file['title'] = filename_title
         elif args.filename_title_with_ai:
-            m_file['title'] = get_track_title_from_ai(args, file, ai_client)
+            m_file['title'], user_modified_ai_responses = get_track_title_from_ai(args, file, ai_client, user_modified_ai_responses)
         elif args.title and args.file:
             m_file['title'] = args.title
     elif isinstance(m_file, mutagen.mp3.MP3):
@@ -221,12 +239,14 @@ def set_tags(args, file, ai_client):
         if args.tracknumber:
             m_file.tags.add(mutagen.id3.TRCK(text=[args.tracknumber]))
         elif args.tracknumber_with_ai:
-            m_file.tags.add(mutagen.id3.TRCK(text=[get_track_number_from_ai(args, file, ai_client)]))
+            tracknumber, user_modified_ai_responses = get_track_number_from_ai(args, file, ai_client)
+            m_file.tags.add(mutagen.id3.TRCK(text=[tracknumber]))
 
         if args.filename_title:
             m_file.tags.add(mutagen.id3.TIT2(text=[filename_title]))
         elif args.filename_title_with_ai:
-            m_file.tags.add(mutagen.id3.TIT2(text=[get_track_title_from_ai(args, file, ai_client)]))
+            title, user_modified_ai_responses = get_track_title_from_ai(args, file, ai_client)
+            m_file.tags.add(mutagen.id3.TIT2(text=[title]))
         elif args.title and args.file:
             m_file.tags.add(mutagen.id3.TIT2(text=[args.title]))
     else:
@@ -244,12 +264,14 @@ def set_tags(args, file, ai_client):
     else:
         print(f'Dry run. Not writing changes to {file}')
     print('')
+    return user_modified_ai_responses
 
 
 def main():
     args = setup_parser()
     try:
         if args.filename_title_with_ai or args.tracknumber_with_ai:
+            user_modified_ai_responses = []
             if args.use_openai_api:
                 ai_client = get_openai_client(args.ai_model)
             elif args.use_azure_openai_services:
@@ -262,7 +284,7 @@ def main():
             os.chdir(args.path)
             files = [f for f in os.listdir('.')]
             for file in files:
-                set_tags(args, file, ai_client)
+                user_modified_ai_responses = set_tags(args, file, ai_client, user_modified_ai_responses)
     except KeyboardInterrupt:
         print("\nInterrupted by user. Exiting...")
         exit(1)
