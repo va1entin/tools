@@ -13,6 +13,7 @@ from azure.ai.inference import ChatCompletionsClient
 from azure.ai.inference.models import SystemMessage, UserMessage
 from azure.core.credentials import AzureKeyCredential
 
+
 def setup_parser():
     parser = argparse.ArgumentParser()
 
@@ -53,6 +54,7 @@ def setup_parser():
 
     return args
 
+
 def get_environment_variable(var_name, requiring_parameter):
     env_var_value = os.environ.get(var_name)
     if env_var_value:
@@ -61,40 +63,33 @@ def get_environment_variable(var_name, requiring_parameter):
         print(f'E: Environment variable {var_name} not set but {requiring_parameter} requires it.')
         exit(1)
 
-def get_openai_client(
-        model_name,
-        api_key=get_environment_variable('OPENAI_API_KEY', '--use-openai-api')
-    ):
+
+def get_openai_client(model_name):
     print(f'Using OpenAI API with model "{model_name}"')
     return OpenAI(
-        api_key = api_key,
+        api_key = get_environment_variable('OPENAI_API_KEY', '--use-openai-api'),
     )
 
-def get_azure_openai_client(
-        model_name,
-        api_key=get_environment_variable('AZURE_OPENAI_API_KEY', '--use-azure-openai-services'),
-        endpoint=get_environment_variable('AZURE_OPENAI_ENDPOINT', '--use-azure-openai-services')
-    ):
+
+def get_azure_openai_client(model_name):
     print(f'Using Azure OpenAI API with deployment "{model_name}"')
     return AzureOpenAI(
-        api_key = api_key,
-        azure_endpoint = endpoint,
+        api_key = get_environment_variable('AZURE_OPENAI_API_KEY', '--use-azure-openai-services'),
+        azure_endpoint = get_environment_variable('AZURE_OPENAI_ENDPOINT', '--use-azure-openai-services'),
         api_version = '2024-05-01-preview',
     )
 
-def get_azure_ai_client(
-        model_name,
-        api_key=get_environment_variable('AZURE_AI_KEY', '--use-azure-ai-services'),
-        endpoint=get_environment_variable('AZURE_AI_ENDPOINT', '--use-azure-ai-services')
-    ):
+
+def get_azure_ai_client(model_name):
     if not model_name:
         print('E: Azure AI Services model name not set but --use-azure-ai-services requires it.')
     print(f'Using Azure AI Services with deployment "{model_name}"')
     return ChatCompletionsClient(
-        credential = AzureKeyCredential(api_key),
-        endpoint = endpoint,
+        credential = AzureKeyCredential(get_environment_variable('AZURE_AI_KEY', '--use-azure-ai-services')),
+        endpoint = get_environment_variable('AZURE_AI_ENDPOINT', '--use-azure-ai-services'),
         model = model_name
     )
+
 
 def get_user_consent(prompt):
     user_consent = input(f'{prompt} [y/N] ')
@@ -102,6 +97,7 @@ def get_user_consent(prompt):
         return True
     else:
         return False
+
 
 def get_chat_completion_openai(openai, model_name, sys_prompt, user_prompt):
     response = openai.chat.completions.create(
@@ -119,6 +115,7 @@ def get_chat_completion_openai(openai, model_name, sys_prompt, user_prompt):
     )
     return response.choices[0].message.content
 
+
 def get_chat_completion_azure_ai(azure_ai, sys_prompt, user_prompt):
     response = azure_ai.complete(
         messages=[
@@ -127,6 +124,7 @@ def get_chat_completion_azure_ai(azure_ai, sys_prompt, user_prompt):
         ]
     )
     return response.choices[0].message.content
+
 
 def get_tag_from_ai(args, filename, tag_type, ai_client, user_modified_ai_responses):
     print(f'Trying to get {tag_type} for file "{filename}" using AI...')
