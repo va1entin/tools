@@ -161,6 +161,7 @@ def get_tag_from_ai(args, filename, tag_type, ai_client, user_modified_ai_respon
                 'user_decision': user_response,
             })
             return user_response, user_modified_ai_responses
+        return '', user_modified_ai_responses
     else:
         print(f'  {args.ai_model} on {used_service} predicted {tag_type} "{tag_prediction}" from file name "{filename}"')
         user_wants_to_modify_tag = get_user_consent(f'  Do you want to modify this {tag_type}?')
