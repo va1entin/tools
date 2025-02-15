@@ -193,12 +193,22 @@ def set_tags(args, file, ai_client, user_modified_ai_responses=[]):
         print(f'Reading file {file}')
 
     try:
+        os.stat(file)
         m_file = mutagen.File(file)
-    except mutagen.wave.error:
-        print('E: mutagen.wave.error - problematic wave file found.')
+    except FileNotFoundError as e:
+        print(f'E: File not found: "{file}"')
+        print()
+        return user_modified_ai_responses
+    except mutagen.wave.error as e:
+        print(f'E: mutagen.wave.error - problematic wave file found: "{file}"')
         print('Ignoring...')
-        print('')
-        return
+        print(e)
+        return user_modified_ai_responses
+    except mutagen.MutagenError as e:
+        print(f'E: mutagen raised an error trying to process: "{file}"')
+        print(e)
+        print()
+        return user_modified_ai_responses
 
     if args.filename_title:
         filename_title = re.sub(r'\.[a-zA-Z0-9]*$', '', file)
@@ -252,7 +262,7 @@ def set_tags(args, file, ai_client, user_modified_ai_responses=[]):
         print(f'E: Unknown file type: {type(m_file)}')
         print('Ignoring...')
         print('')
-        return
+        return user_modified_ai_responses
 
     if args.verbose:
         print('Modified file object:')
