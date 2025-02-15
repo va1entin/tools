@@ -248,13 +248,13 @@ def set_tags(args, file, ai_client, user_modified_ai_responses=[]):
         if args.tracknumber:
             m_file.tags.add(mutagen.id3.TRCK(text=[args.tracknumber]))
         elif args.tracknumber_with_ai:
-            tracknumber, user_modified_ai_responses = get_track_number_from_ai(args, file, ai_client)
+            tracknumber, user_modified_ai_responses = get_track_number_from_ai(args, file, ai_client, user_modified_ai_responses)
             m_file.tags.add(mutagen.id3.TRCK(text=[tracknumber]))
 
         if args.filename_title:
             m_file.tags.add(mutagen.id3.TIT2(text=[filename_title]))
         elif args.filename_title_with_ai:
-            title, user_modified_ai_responses = get_track_title_from_ai(args, file, ai_client)
+            title, user_modified_ai_responses = get_track_title_from_ai(args, file, ai_client, user_modified_ai_responses)
             m_file.tags.add(mutagen.id3.TIT2(text=[title]))
         elif args.title and args.file:
             m_file.tags.add(mutagen.id3.TIT2(text=[args.title]))
