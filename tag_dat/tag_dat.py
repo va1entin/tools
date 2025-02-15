@@ -287,6 +287,8 @@ def main():
                 ai_client = get_azure_openai_client(args.ai_model)
             elif args.use_azure_ai_services:
                 ai_client = get_azure_ai_client(args.ai_model)
+        else:
+            ai_client = None
         if args.file:
             set_tags(args, args.file, ai_client)
         if args.path:
