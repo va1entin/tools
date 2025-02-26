@@ -279,16 +279,15 @@ def set_tags(args, file, ai_client, user_modified_ai_responses=[]):
 def main():
     args = setup_parser()
     try:
+        user_modified_ai_responses = []
+        ai_client = None
         if args.filename_title_with_ai or args.tracknumber_with_ai:
-            user_modified_ai_responses = []
             if args.use_openai_api:
                 ai_client = get_openai_client(args.ai_model)
             elif args.use_azure_openai_services:
                 ai_client = get_azure_openai_client(args.ai_model)
             elif args.use_azure_ai_services:
                 ai_client = get_azure_ai_client(args.ai_model)
-        else:
-            ai_client = None
         if args.file:
             set_tags(args, args.file, ai_client)
         if args.path:
