@@ -260,7 +260,7 @@ def set_tags(args, file, ai_client, user_modified_ai_responses=[]):
             m_file.tags.add(mutagen.id3.TIT2(text=[args.title]))
     else:
         print(f'E: Unknown file type: {type(m_file)}')
-        print('Ignoring...')
+        print(f'Ignoring file {file}')
         print('')
         return user_modified_ai_responses
 
