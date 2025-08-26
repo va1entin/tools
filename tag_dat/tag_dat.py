@@ -28,7 +28,7 @@ def setup_parser():
     ai_client_group.add_argument('-azoai', '--use-azure-openai-services', action='store_true', help='Use Azure OpenAI API for AI-assisted operations', default=False)
     ai_client_group.add_argument('-azai', '--use-azure-ai-services', action='store_true', help='Use Azure AI Services API for AI-assisted operations', default=False)
 
-    parser.add_argument('-m', '--ai-model', help='AI model to use', default='gpt-4o-mini')
+    parser.add_argument('-m', '--ai-model', help='AI model to use', default='gpt-5-nano')
 
     title_group = parser.add_mutually_exclusive_group()
     title_group.add_argument('-ft', '--filename-title', action='store_true', help="Set title from file name (takes exact filename without file type ending: my_file.mp3 -> my_file)", default=False)
@@ -76,7 +76,7 @@ def get_azure_openai_client(model_name):
     return AzureOpenAI(
         api_key = get_environment_variable('AZURE_OPENAI_API_KEY', '--use-azure-openai-services'),
         azure_endpoint = get_environment_variable('AZURE_OPENAI_ENDPOINT', '--use-azure-openai-services'),
-        api_version = '2024-05-01-preview',
+        api_version = '2024-12-01-preview',
     )
 
 
