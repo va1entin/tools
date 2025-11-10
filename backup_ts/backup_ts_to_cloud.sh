@@ -2,7 +2,8 @@
 
 TODAY="$(date +'%Y_%m_%d')"
 
-BACKUP_NAME="ts_backup_${TODAY}"
+BACKUP_NAME_PREFIX="ts_backup"
+BACKUP_NAME="${BACKUP_NAME_PREFIX}_${TODAY}"
 BACKUP_FOLDER="/tmp/${BACKUP_NAME}"
 BACKUP_ARCHIVE="${BACKUP_FOLDER}.tar.xz"
 BACKUP_PUBLIC_KEY="${1}"
@@ -12,8 +13,15 @@ RCLONE_REMOTE_FOLDER="ts_backups"
 ENCRYPTED_BACKUP_ARCHIVE="${BACKUP_ARCHIVE}.crypt"
 REMOTE_RETENTION="5d"
 
-echo "Creating backup folder..."
+echo "Starting TeamSpeak backup to cloud process, moving to /tmp directory..."
 cd /tmp
+echo ""
+
+echo "Removing old existing backup folder and archives if any..."
+rm -rf "/tmp/${BACKUP_NAME_PREFIX}*"
+echo ""
+
+echo "Creating backup folder..."
 mkdir "${BACKUP_FOLDER}"
 echo ""
 
