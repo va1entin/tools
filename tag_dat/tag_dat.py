@@ -28,7 +28,7 @@ def setup_parser():
     ai_client_group.add_argument('-azoai', '--use-azure-openai-services', action='store_true', help='Use Azure OpenAI API for AI-assisted operations', default=False)
     ai_client_group.add_argument('-azai', '--use-azure-ai-services', action='store_true', help='Use Azure AI Services API for AI-assisted operations', default=False)
 
-    parser.add_argument('-m', '--ai-model', help='AI model to use', default='gpt-5-nano')
+    parser.add_argument('-m', '--ai-model', help='AI model to use', default='gpt-5.4-nano')
 
     title_group = parser.add_mutually_exclusive_group()
     title_group.add_argument('-ft', '--filename-title', action='store_true', help="Set title from file name (takes exact filename without file type ending: my_file.mp3 -> my_file)", default=False)
