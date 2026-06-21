@@ -11,7 +11,7 @@ MARIADB_CONTAINER_NAME="${2}"
 RCLONE_REMOTE="${3}"
 RCLONE_REMOTE_FOLDER="ts_backups"
 ENCRYPTED_BACKUP_ARCHIVE="${BACKUP_ARCHIVE}.crypt"
-REMOTE_RETENTION="5d"
+REMOTE_RETENTION="30d"
 
 echo "Starting TeamSpeak backup to cloud process, moving to /tmp directory..."
 cd /tmp
